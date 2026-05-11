@@ -1,10 +1,15 @@
-import { Env } from "./types";
+import { Env, CardOptions } from "./types";
 import {
   validateScholarId,
   validatePaperId,
+  validateColor,
+  parseTheme,
   checkRateLimit,
   cleanupRateLimitMap,
 } from "./security";
+import { renderErrorCard } from "./svg/error-card";
+import { renderProfileCard } from "./svg/profile-card";
+import { renderPaperCard } from "./svg/paper-card";
 import { scrapeProfile } from "./scraper/profile";
 import { scrapePaper } from "./scraper/paper";
 import {
@@ -14,54 +19,79 @@ import {
   cachePaper,
 } from "./cache";
 
-function jsonResponse(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data, null, 2), {
+const CACHE_HEADERS = { "Cache-Control": "public, max-age=3600, s-maxage=3600" };
+
+function svgResponse(svg: string, status = 200): Response {
+  return new Response(svg, {
     status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=3600, s-maxage=3600",
-    },
+    headers: { "Content-Type": "image/svg+xml; charset=utf-8", ...CACHE_HEADERS },
   });
 }
 
-function errorResponse(message: string, status: number): Response {
-  return jsonResponse({ error: message }, status);
+function jsonResponse(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: { "Content-Type": "application/json", ...CACHE_HEADERS },
+  });
 }
 
-function handleScrapeError(err: unknown): Response {
+function parseCardOptions(url: URL): CardOptions {
+  return {
+    theme: parseTheme(url.searchParams.get("theme")),
+    color: validateColor(url.searchParams.get("color")) ?? "4285f4",
+  };
+}
+
+function isJson(url: URL): boolean {
+  return url.searchParams.get("format") === "json";
+}
+
+function handleScrapeError(err: unknown, url: URL): Response {
   const message = err instanceof Error ? err.message : "Unknown error";
+  const json = isJson(url);
 
-  if (message === "RATE_LIMITED" || message === "CAPTCHA") {
-    return errorResponse("Scholar is temporarily unavailable — try again later", 503);
-  }
-  if (message === "USER_NOT_FOUND") {
-    return errorResponse("Scholar profile not found", 404);
-  }
-  if (message === "PAPER_NOT_FOUND") {
-    return errorResponse("Paper not found", 404);
-  }
+  const errorMap: Record<string, { msg: string; status: number }> = {
+    RATE_LIMITED: { msg: "Scholar is temporarily unavailable — try again later", status: 503 },
+    CAPTCHA: { msg: "Scholar is temporarily unavailable — try again later", status: 503 },
+    USER_NOT_FOUND: { msg: "Scholar profile not found", status: 404 },
+    PAPER_NOT_FOUND: { msg: "Paper not found", status: 404 },
+  };
 
-  console.error("Scrape error:", message);
-  return errorResponse("Failed to fetch data — try again later", 500);
+  const mapped = errorMap[message];
+  const errorMsg = mapped?.msg ?? "Failed to fetch data — try again later";
+  const status = mapped?.status ?? 500;
+
+  if (!mapped) console.error("Scrape error:", message);
+
+  if (json) {
+    return jsonResponse({ error: errorMsg }, status);
+  }
+  return svgResponse(renderErrorCard(errorMsg, parseCardOptions(url)), status);
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method !== "GET") {
-      return errorResponse("Method not allowed", 405);
+      return jsonResponse({ error: "Method not allowed" }, 405);
     }
 
     cleanupRateLimitMap();
 
     const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
     if (!checkRateLimit(ip)) {
-      return errorResponse("Rate limited — try again in a minute", 429);
+      const url = new URL(request.url);
+      if (isJson(url)) {
+        return jsonResponse({ error: "Rate limited — try again in a minute" }, 429);
+      }
+      return svgResponse(
+        renderErrorCard("Rate limited — try again in a minute", parseCardOptions(url)),
+        429
+      );
     }
 
     const url = new URL(request.url);
-    const path = url.pathname;
 
-    switch (path) {
+    switch (url.pathname) {
       case "/profile":
         return handleProfile(url, env);
       case "/paper":
@@ -73,18 +103,28 @@ export default {
             profile: "/profile?user=SCHOLAR_ID",
             paper: "/paper?user=USER_ID&paper=PAPER_ID",
           },
+          params: {
+            theme: "light | dark (default: light)",
+            color: "hex accent color (default: 4285f4)",
+            format: "json (default: svg)",
+          },
         });
       default:
-        return errorResponse("Not found", 404);
+        return jsonResponse({ error: "Not found" }, 404);
     }
   },
 };
 
 async function handleProfile(url: URL, env: Env): Promise<Response> {
   const userId = validateScholarId(url.searchParams.get("user"));
+  const json = isJson(url);
+  const options = parseCardOptions(url);
 
   if (!userId) {
-    return errorResponse("Missing or invalid 'user' parameter", 400);
+    const msg = "Missing or invalid 'user' parameter";
+    return json
+      ? jsonResponse({ error: msg }, 400)
+      : svgResponse(renderErrorCard(msg, options), 400);
   }
 
   try {
@@ -93,18 +133,23 @@ async function handleProfile(url: URL, env: Env): Promise<Response> {
       data = await scrapeProfile(userId);
       await cacheProfile(env, userId, data);
     }
-    return jsonResponse(data);
+    return json ? jsonResponse(data) : svgResponse(renderProfileCard(data, options));
   } catch (err) {
-    return handleScrapeError(err);
+    return handleScrapeError(err, url);
   }
 }
 
 async function handlePaper(url: URL, env: Env): Promise<Response> {
   const userId = validateScholarId(url.searchParams.get("user"));
   const paperId = validatePaperId(url.searchParams.get("paper"));
+  const json = isJson(url);
+  const options = parseCardOptions(url);
 
   if (!userId || !paperId) {
-    return errorResponse("Missing or invalid 'user' and/or 'paper' parameter", 400);
+    const msg = "Missing or invalid 'user' and/or 'paper' parameter";
+    return json
+      ? jsonResponse({ error: msg }, 400)
+      : svgResponse(renderErrorCard(msg, options), 400);
   }
 
   try {
@@ -113,8 +158,8 @@ async function handlePaper(url: URL, env: Env): Promise<Response> {
       data = await scrapePaper(userId, paperId);
       await cachePaper(env, userId, paperId, data);
     }
-    return jsonResponse(data);
+    return json ? jsonResponse(data) : svgResponse(renderPaperCard(data, options));
   } catch (err) {
-    return handleScrapeError(err);
+    return handleScrapeError(err, url);
   }
 }

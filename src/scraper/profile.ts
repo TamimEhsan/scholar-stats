@@ -53,7 +53,12 @@ export async function scrapeProfile(userId: string): Promise<ProfileData> {
     throw new Error("USER_NOT_FOUND");
   }
 
-  const affiliation = extractText(html, /class="gsc_prf_il"[^>]*>([^<]+)/) ?? "";
+  const affiliationMatch = html.match(
+    /class="gsc_prf_il"(?:(?!id=)[^>])*>([\s\S]*?)<\/div>/
+  );
+  const affiliation = affiliationMatch
+    ? affiliationMatch[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()
+    : "";
 
   const interests: string[] = [];
   const interestPattern = /class="gsc_prf_inta[^"]*"[^>]*>([^<]+)</g;
