@@ -4,6 +4,8 @@ export interface Env {
 
 export interface ProfileData {
   name: string;
+  affiliation: string;
+  interests: string[];
   citations: number;
   hIndex: number;
   i10Index: number;

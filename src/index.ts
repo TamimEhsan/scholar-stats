@@ -1,45 +1,61 @@
-import { Env, CardOptions } from "./types";
+import { Env } from "./types";
 import {
   validateScholarId,
   validatePaperId,
-  validateColor,
-  parseTheme,
   checkRateLimit,
   cleanupRateLimitMap,
 } from "./security";
-import { renderErrorCard } from "./svg/error-card";
+import { scrapeProfile } from "./scraper/profile";
+import { scrapePaper } from "./scraper/paper";
+import {
+  getCachedProfile,
+  cacheProfile,
+  getCachedPaper,
+  cachePaper,
+} from "./cache";
 
-const SVG_HEADERS: HeadersInit = {
-  "Content-Type": "image/svg+xml; charset=utf-8",
-  "Cache-Control": "public, max-age=3600, s-maxage=3600",
-};
-
-function svgResponse(svg: string, status = 200): Response {
-  return new Response(svg, { status, headers: SVG_HEADERS });
+function jsonResponse(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+    },
+  });
 }
 
-function parseCardOptions(url: URL): CardOptions {
-  return {
-    theme: parseTheme(url.searchParams.get("theme")),
-    color: validateColor(url.searchParams.get("color")) ?? "4285f4",
-  };
+function errorResponse(message: string, status: number): Response {
+  return jsonResponse({ error: message }, status);
+}
+
+function handleScrapeError(err: unknown): Response {
+  const message = err instanceof Error ? err.message : "Unknown error";
+
+  if (message === "RATE_LIMITED" || message === "CAPTCHA") {
+    return errorResponse("Scholar is temporarily unavailable — try again later", 503);
+  }
+  if (message === "USER_NOT_FOUND") {
+    return errorResponse("Scholar profile not found", 404);
+  }
+  if (message === "PAPER_NOT_FOUND") {
+    return errorResponse("Paper not found", 404);
+  }
+
+  console.error("Scrape error:", message);
+  return errorResponse("Failed to fetch data — try again later", 500);
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method !== "GET") {
-      return new Response("Method not allowed", { status: 405 });
+      return errorResponse("Method not allowed", 405);
     }
 
     cleanupRateLimitMap();
 
     const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
     if (!checkRateLimit(ip)) {
-      const options = parseCardOptions(new URL(request.url));
-      return svgResponse(
-        renderErrorCard("Rate limited — try again in a minute", options),
-        429
-      );
+      return errorResponse("Rate limited — try again in a minute", 429);
     }
 
     const url = new URL(request.url);
@@ -51,52 +67,54 @@ export default {
       case "/paper":
         return handlePaper(url, env);
       case "/":
-        return new Response(
-          "Scholar Badge API. Usage: /profile?user=SCHOLAR_ID or /paper?user=USER_ID&paper=PAPER_ID",
-          { status: 200 }
-        );
+        return jsonResponse({
+          service: "Scholar Badge API",
+          endpoints: {
+            profile: "/profile?user=SCHOLAR_ID",
+            paper: "/paper?user=USER_ID&paper=PAPER_ID",
+          },
+        });
       default:
-        return new Response("Not found", { status: 404 });
+        return errorResponse("Not found", 404);
     }
   },
 };
 
-async function handleProfile(url: URL, _env: Env): Promise<Response> {
-  const options = parseCardOptions(url);
+async function handleProfile(url: URL, env: Env): Promise<Response> {
   const userId = validateScholarId(url.searchParams.get("user"));
 
   if (!userId) {
-    return svgResponse(
-      renderErrorCard("Missing or invalid 'user' parameter", options),
-      400
-    );
+    return errorResponse("Missing or invalid 'user' parameter", 400);
   }
 
-  // TODO: Phase 2 — scrape + cache + render
-  return svgResponse(
-    renderErrorCard("Profile card coming soon", options),
-    501
-  );
+  try {
+    let data = await getCachedProfile(env, userId);
+    if (!data) {
+      data = await scrapeProfile(userId);
+      await cacheProfile(env, userId, data);
+    }
+    return jsonResponse(data);
+  } catch (err) {
+    return handleScrapeError(err);
+  }
 }
 
-async function handlePaper(url: URL, _env: Env): Promise<Response> {
-  const options = parseCardOptions(url);
+async function handlePaper(url: URL, env: Env): Promise<Response> {
   const userId = validateScholarId(url.searchParams.get("user"));
   const paperId = validatePaperId(url.searchParams.get("paper"));
 
   if (!userId || !paperId) {
-    return svgResponse(
-      renderErrorCard(
-        "Missing or invalid 'user' and/or 'paper' parameter",
-        options
-      ),
-      400
-    );
+    return errorResponse("Missing or invalid 'user' and/or 'paper' parameter", 400);
   }
 
-  // TODO: Phase 2 — scrape + cache + render
-  return svgResponse(
-    renderErrorCard("Paper card coming soon", options),
-    501
-  );
+  try {
+    let data = await getCachedPaper(env, userId, paperId);
+    if (!data) {
+      data = await scrapePaper(userId, paperId);
+      await cachePaper(env, userId, paperId, data);
+    }
+    return jsonResponse(data);
+  } catch (err) {
+    return handleScrapeError(err);
+  }
 }
