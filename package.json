@@ -1,0 +1,17 @@
+{
+  "name": "scholar-badge",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "description": "Google Scholar stats cards for your GitHub README",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260511.1",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.86.0"
+  }
+}
