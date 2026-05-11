@@ -1,6 +1,11 @@
 import { Env, ProfileData, PaperData } from "./types";
 
 const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 hours
+const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6 hours in ms
+
+export function isStale(scrapedAt: number): boolean {
+  return Date.now() - scrapedAt > STALE_THRESHOLD_MS;
+}
 
 export async function getCachedProfile(
   env: Env,

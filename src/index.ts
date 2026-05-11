@@ -17,6 +17,7 @@ import {
   cacheProfile,
   getCachedPaper,
   cachePaper,
+  isStale,
 } from "./cache";
 
 const CACHE_HEADERS = { "Cache-Control": "public, max-age=3600, s-maxage=3600" };
@@ -70,7 +71,7 @@ function handleScrapeError(err: unknown, url: URL): Response {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (request.method !== "GET") {
       return jsonResponse({ error: "Method not allowed" }, 405);
     }
@@ -93,9 +94,9 @@ export default {
 
     switch (url.pathname) {
       case "/profile":
-        return handleProfile(url, env);
+        return handleProfile(url, env, ctx);
       case "/paper":
-        return handlePaper(url, env);
+        return handlePaper(url, env, ctx);
       case "/":
         return jsonResponse({
           service: "Scholar Badge API",
@@ -115,7 +116,7 @@ export default {
   },
 };
 
-async function handleProfile(url: URL, env: Env): Promise<Response> {
+async function handleProfile(url: URL, env: Env, ctx: ExecutionContext): Promise<Response> {
   const userId = validateScholarId(url.searchParams.get("user"));
   const json = isJson(url);
   const options = parseCardOptions(url);
@@ -129,17 +130,27 @@ async function handleProfile(url: URL, env: Env): Promise<Response> {
 
   try {
     let data = await getCachedProfile(env, userId);
+
+    if (data && isStale(data.scrapedAt)) {
+      ctx.waitUntil(
+        scrapeProfile(userId)
+          .then((fresh) => cacheProfile(env, userId, fresh))
+          .catch((err) => console.error("Background refresh failed:", err))
+      );
+    }
+
     if (!data) {
       data = await scrapeProfile(userId);
       await cacheProfile(env, userId, data);
     }
+
     return json ? jsonResponse(data) : svgResponse(renderProfileCard(data, options));
   } catch (err) {
     return handleScrapeError(err, url);
   }
 }
 
-async function handlePaper(url: URL, env: Env): Promise<Response> {
+async function handlePaper(url: URL, env: Env, ctx: ExecutionContext): Promise<Response> {
   const userId = validateScholarId(url.searchParams.get("user"));
   const paperId = validatePaperId(url.searchParams.get("paper"));
   const json = isJson(url);
@@ -154,10 +165,20 @@ async function handlePaper(url: URL, env: Env): Promise<Response> {
 
   try {
     let data = await getCachedPaper(env, userId, paperId);
+
+    if (data && isStale(data.scrapedAt)) {
+      ctx.waitUntil(
+        scrapePaper(userId, paperId)
+          .then((fresh) => cachePaper(env, userId, paperId, fresh))
+          .catch((err) => console.error("Background refresh failed:", err))
+      );
+    }
+
     if (!data) {
       data = await scrapePaper(userId, paperId);
       await cachePaper(env, userId, paperId, data);
     }
+
     return json ? jsonResponse(data) : svgResponse(renderPaperCard(data, options));
   } catch (err) {
     return handleScrapeError(err, url);
