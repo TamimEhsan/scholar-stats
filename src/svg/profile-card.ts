@@ -35,7 +35,7 @@ export function renderProfileCard(
   const affiliationLines = wrapText(affiliation, CONTENT_WIDTH, 13);
   const interestLines = wrapText(interests, CONTENT_WIDTH, 12);
 
-  let y = 35;
+  let y = 25;
   let bodyContent = "";
 
   // Name + icon

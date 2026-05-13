@@ -1,6 +1,6 @@
 # Scholar Badge
 
-Generate dynamic SVG cards showing Google Scholar statistics — embeddable in GitHub READMEs, websites, and anywhere that renders images.
+Generate dynamic SVG cards and badges showing Google Scholar statistics — embeddable in GitHub READMEs, websites, and anywhere that renders images.
 
 ## Cards
 
@@ -9,7 +9,7 @@ Generate dynamic SVG cards showing Google Scholar statistics — embeddable in G
 Shows a researcher's name, affiliation, interests, citation count, h-index, and i10-index.
 
 ```markdown
-![Scholar Stats](https://scholar-badge.<your-domain>/profile?user=SCHOLAR_ID)
+![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=SCHOLAR_ID)
 ```
 
 ### Paper Card
@@ -17,7 +17,25 @@ Shows a researcher's name, affiliation, interests, citation count, h-index, and 
 Shows a paper's title, authors, venue, year, and citation count.
 
 ```markdown
-![Paper Stats](https://scholar-badge.<your-domain>/paper?user=USER_ID&paper=PAPER_ID)
+![Paper Stats](https://scholar-badge.<your-domain>/card/paper?user=USER_ID&paper=PAPER_ID)
+```
+
+## Badges
+
+Shields.io-style flat badges for individual stats.
+
+### Profile Badges
+
+```markdown
+![Citations](https://scholar-badge.<your-domain>/badge/profile/citations?user=SCHOLAR_ID)
+![h-index](https://scholar-badge.<your-domain>/badge/profile/h-index?user=SCHOLAR_ID)
+![i10-index](https://scholar-badge.<your-domain>/badge/profile/i10-index?user=SCHOLAR_ID)
+```
+
+### Paper Badge
+
+```markdown
+![Citations](https://scholar-badge.<your-domain>/badge/paper/citations?user=USER_ID&paper=PAPER_ID)
 ```
 
 ## Finding Your IDs
@@ -41,36 +59,43 @@ https://scholar.google.com/citations?view_op=view_citation&citation_for_view=kuk
 | Parameter | Values | Default | Description |
 |-----------|--------|---------|-------------|
 | `user` | Scholar ID | *required* | Google Scholar user ID |
-| `paper` | Paper ID | *required for /paper* | Paper ID (from citation_for_view) |
+| `paper` | Paper ID | *required for paper endpoints* | Paper ID (from citation_for_view) |
 | `theme` | `light`, `dark` | `light` | Card color theme |
 | `color` | Hex color (no #) | `4285f4` | Accent color |
 | `format` | `json` | `svg` | Response format |
 
 ## Examples
 
-### Light theme (default)
+### Profile card with link
 ```markdown
-[![Scholar Stats](https://scholar-badge.<your-domain>/profile?user=kukA0LcAAAAJ)](https://scholar.google.com/citations?user=kukA0LcAAAAJ)
+[![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ)](https://scholar.google.com/citations?user=kukA0LcAAAAJ)
 ```
 
 ### Dark theme
 ```markdown
-![Scholar Stats](https://scholar-badge.<your-domain>/profile?user=kukA0LcAAAAJ&theme=dark)
+![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ&theme=dark)
 ```
 
 ### Custom accent color
 ```markdown
-![Scholar Stats](https://scholar-badge.<your-domain>/profile?user=kukA0LcAAAAJ&color=e91e63)
+![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ&color=e91e63)
 ```
 
 ### Paper card
 ```markdown
-![Paper](https://scholar-badge.<your-domain>/paper?user=kukA0LcAAAAJ&paper=u5HHmVD_uO8C)
+![Paper](https://scholar-badge.<your-domain>/card/paper?user=kukA0LcAAAAJ&paper=u5HHmVD_uO8C)
+```
+
+### Badges in a row
+```markdown
+![Citations](https://scholar-badge.<your-domain>/badge/profile/citations?user=kukA0LcAAAAJ)
+![h-index](https://scholar-badge.<your-domain>/badge/profile/h-index?user=kukA0LcAAAAJ)
+![i10-index](https://scholar-badge.<your-domain>/badge/profile/i10-index?user=kukA0LcAAAAJ)
 ```
 
 ### JSON response
 ```
-https://scholar-badge.<your-domain>/profile?user=kukA0LcAAAAJ&format=json
+https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ&format=json
 ```
 
 Returns:
@@ -85,6 +110,17 @@ Returns:
   "scrapedAt": 1778491696994
 }
 ```
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/card/profile?user=ID` | Profile stats card (SVG) |
+| `/card/paper?user=ID&paper=PID` | Paper stats card (SVG) |
+| `/badge/profile/citations?user=ID` | Citations badge |
+| `/badge/profile/h-index?user=ID` | h-index badge |
+| `/badge/profile/i10-index?user=ID` | i10-index badge |
+| `/badge/paper/citations?user=ID&paper=PID` | Paper citations badge |
 
 ## Self-Hosting
 
@@ -113,22 +149,23 @@ npx wrangler deploy
 
 ### How It Works
 
-1. A request comes in (e.g. `/profile?user=kukA0LcAAAAJ`)
-2. Check Cloudflare Workers KV cache for existing data
-3. **Cache hit** — return immediately. If data is >6 hours old, trigger a background refresh
-4. **Cache miss** — scrape Google Scholar, cache the result, return the card
-5. SVG is rendered from the scraped data with the requested theme/color
+1. A request comes in (e.g. `/card/profile?user=kukA0LcAAAAJ`)
+2. Check Edge Cache (per-location, free, no limits)
+3. On miss, check Workers KV (persistent, global)
+4. On miss, scrape Google Scholar and cache in both layers
+5. If cached data is >24 hours old, serve stale and refresh in background
+6. SVG is rendered from the scraped data with the requested theme/color
 
 ### Rate Limits
 
 - **Per-IP**: 30 requests/minute
-- **Cache TTL**: 6 hours (data is scraped at most once per user per 6 hours)
+- **Cache TTL**: 24 hours (data is scraped at most once per user per day)
 - **Browser cache**: 1 hour
 
 ## Tech Stack
 
 - **Runtime**: Cloudflare Workers (TypeScript)
-- **Cache**: Workers KV
+- **Cache**: Edge Cache API + Workers KV (two-layer)
 - **Rendering**: SVG via string templates
 - **DDoS Protection**: Cloudflare (built-in)
 

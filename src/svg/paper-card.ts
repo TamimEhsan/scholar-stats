@@ -2,7 +2,7 @@ import { PaperData, CardOptions } from "../types";
 import { xmlEscape } from "../security";
 import { wrapText, renderWrappedText } from "./text-wrap";
 
-const CONTENT_WIDTH = 420;
+const CONTENT_WIDTH = 360;
 const LINE_HEIGHT_TITLE = 18;
 const LINE_HEIGHT_AUTHORS = 16;
 
@@ -33,7 +33,7 @@ export function renderPaperCard(
   const titleLines = wrapText(data.title, CONTENT_WIDTH, 16);
   const authorLines = wrapText(data.authors, CONTENT_WIDTH, 13);
 
-  let y = 32;
+  let y = 22;
   let bodyContent = "";
 
   // Title with icon
@@ -51,8 +51,8 @@ export function renderPaperCard(
   bodyContent += `
   </g>`;
 
-  // First line is at absolute y = 32 + 14 = 46
-  y = 46 + LINE_HEIGHT_TITLE;
+  // First line is at absolute y = 22 + 14 = 36
+  y = 36 + LINE_HEIGHT_TITLE;
 
   // Remaining title lines
   if (titleLines.length > 1) {
@@ -80,17 +80,18 @@ export function renderPaperCard(
     y += 18;
   }
 
-  y += 8;
+  y += 10;
 
   // Citation stat box
+  const statBoxHeight = 45;
   bodyContent += `
-  <rect x="15" y="${y}" width="465" height="45" rx="4" fill="${statBg}"/>
-  <g transform="translate(247, ${y + 13})">
+  <rect x="15" y="${y}" width="465" height="${statBoxHeight}" rx="4" fill="${statBg}"/>
+  <g transform="translate(247, ${y + 21})">
     <text x="0" y="0" text-anchor="middle" class="cite-value">${formatNumber(data.citations)}</text>
-    <text x="0" y="20" text-anchor="middle" class="cite-label">Citations</text>
+    <text x="0" y="18" text-anchor="middle" class="cite-label">Citations</text>
   </g>`;
 
-  const cardHeight = y + 55;
+  const cardHeight = y + statBoxHeight + 15;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="495" height="${cardHeight}" viewBox="0 0 495 ${cardHeight}" fill="none">
   <style>
