@@ -9,7 +9,8 @@ export interface ProfileData {
   citations: number;
   hIndex: number;
   i10Index: number;
-  scrapedAt: number;
+  worksCount: number;
+  fetchedAt: number;
 }
 
 export interface PaperData {
@@ -18,7 +19,7 @@ export interface PaperData {
   year: string;
   citations: number;
   venue: string;
-  scrapedAt: number;
+  fetchedAt: number;
 }
 
 export interface CardOptions {

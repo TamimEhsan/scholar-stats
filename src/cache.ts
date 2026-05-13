@@ -4,8 +4,8 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 1 day
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 1 day in ms
 const EDGE_CACHE_URL = "https://scholar-badge-cache.internal";
 
-export function isStale(scrapedAt: number): boolean {
-  return Date.now() - scrapedAt > STALE_THRESHOLD_MS;
+export function isStale(fetchedAt: number): boolean {
+  return Date.now() - fetchedAt > STALE_THRESHOLD_MS;
 }
 
 async function getEdgeCache(key: string): Promise<string | null> {
@@ -27,14 +27,11 @@ async function setEdgeCache(key: string, data: string): Promise<void> {
 }
 
 async function getCached<T>(env: Env, key: string): Promise<T | null> {
-  // Layer 1: Edge Cache API (free, no write limits, per-location)
   const edgeHit = await getEdgeCache(key);
   if (edgeHit) return JSON.parse(edgeHit) as T;
 
-  // Layer 2: KV (persistent, global, 1K writes/day on free tier)
   const kvHit = await env.CACHE.get(key);
   if (kvHit) {
-    // Promote to edge cache to reduce future KV reads
     await setEdgeCache(key, kvHit);
     return JSON.parse(kvHit) as T;
   }
@@ -44,8 +41,6 @@ async function getCached<T>(env: Env, key: string): Promise<T | null> {
 
 async function setCache(env: Env, key: string, data: unknown): Promise<void> {
   const json = JSON.stringify(data);
-
-  // Write to both layers
   await Promise.all([
     setEdgeCache(key, json),
     env.CACHE.put(key, json, { expirationTtl: CACHE_TTL_SECONDS }),
@@ -54,32 +49,30 @@ async function setCache(env: Env, key: string, data: unknown): Promise<void> {
 
 export async function getCachedProfile(
   env: Env,
-  userId: string
+  orcid: string
 ): Promise<ProfileData | null> {
-  return getCached<ProfileData>(env, `profile:${userId}`);
+  return getCached<ProfileData>(env, `profile:${orcid}`);
 }
 
 export async function cacheProfile(
   env: Env,
-  userId: string,
+  orcid: string,
   data: ProfileData
 ): Promise<void> {
-  await setCache(env, `profile:${userId}`, data);
+  await setCache(env, `profile:${orcid}`, data);
 }
 
 export async function getCachedPaper(
   env: Env,
-  userId: string,
   paperId: string
 ): Promise<PaperData | null> {
-  return getCached<PaperData>(env, `paper:${userId}:${paperId}`);
+  return getCached<PaperData>(env, `paper:${paperId}`);
 }
 
 export async function cachePaper(
   env: Env,
-  userId: string,
   paperId: string,
   data: PaperData
 ): Promise<void> {
-  await setCache(env, `paper:${userId}:${paperId}`, data);
+  await setCache(env, `paper:${paperId}`, data);
 }

@@ -1,6 +1,6 @@
 # Scholar Badge
 
-Generate dynamic SVG cards and badges showing Google Scholar statistics — embeddable in GitHub READMEs, websites, and anywhere that renders images.
+Generate dynamic SVG cards and badges showing academic statistics — embeddable in GitHub READMEs, websites, and anywhere that renders images. Powered by [OpenAlex](https://openalex.org/).
 
 ## Cards
 
@@ -9,7 +9,7 @@ Generate dynamic SVG cards and badges showing Google Scholar statistics — embe
 Shows a researcher's name, affiliation, interests, citation count, h-index, and i10-index.
 
 ```markdown
-![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=SCHOLAR_ID)
+![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515)
 ```
 
 ### Paper Card
@@ -17,7 +17,7 @@ Shows a researcher's name, affiliation, interests, citation count, h-index, and 
 Shows a paper's title, authors, venue, year, and citation count.
 
 ```markdown
-![Paper Stats](https://scholar-badge.<your-domain>/card/paper?user=USER_ID&paper=PAPER_ID)
+![Paper Stats](https://scholar-badge.scholar-stats.workers.dev/card/paper?paper=W2919115771)
 ```
 
 ## Badges
@@ -27,87 +27,103 @@ Shields.io-style flat badges for individual stats.
 ### Profile Badges
 
 ```markdown
-![Citations](https://scholar-badge.<your-domain>/badge/profile/citations?user=SCHOLAR_ID)
-![h-index](https://scholar-badge.<your-domain>/badge/profile/h-index?user=SCHOLAR_ID)
-![i10-index](https://scholar-badge.<your-domain>/badge/profile/i10-index?user=SCHOLAR_ID)
+![Citations](https://scholar-badge.scholar-stats.workers.dev/badge/profile/citations?orcid=0000-0002-9322-3515)
+![h-index](https://scholar-badge.scholar-stats.workers.dev/badge/profile/h-index?orcid=0000-0002-9322-3515)
+![i10-index](https://scholar-badge.scholar-stats.workers.dev/badge/profile/i10-index?orcid=0000-0002-9322-3515)
 ```
 
 ### Paper Badge
 
 ```markdown
-![Citations](https://scholar-badge.<your-domain>/badge/paper/citations?user=USER_ID&paper=PAPER_ID)
+![Citations](https://scholar-badge.scholar-stats.workers.dev/badge/paper/citations?paper=W2919115771)
 ```
 
 ## Finding Your IDs
 
-**Scholar ID** — Go to your [Google Scholar profile](https://scholar.google.com/). Your URL looks like:
+**ORCID** — Go to [orcid.org](https://orcid.org/) and sign in. Your ORCID iD is in the URL:
 ```
-https://scholar.google.com/citations?user=kukA0LcAAAAJ
-                                          ^^^^^^^^^^^^
-                                          This is your Scholar ID
+https://orcid.org/0000-0002-9322-3515
+                  ^^^^^^^^^^^^^^^^^^^
+                  This is your ORCID
 ```
 
-**Paper ID** — Click on a paper in your Scholar profile. The URL looks like:
+**Paper ID** — Use an OpenAlex work ID (starts with `W`) or a DOI. You can search for papers at [OpenAlex](https://openalex.org/):
 ```
-https://scholar.google.com/citations?view_op=view_citation&citation_for_view=kukA0LcAAAAJ:u5HHmVD_uO8C
-                                                                              ^^^^^^^^^^^^  ^^^^^^^^^^^^
-                                                                              User ID       Paper ID
+W2919115771                    ← OpenAlex work ID
+10.1038/s41586-020-2649-2      ← DOI
 ```
 
 ## Parameters
 
 | Parameter | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `user` | Scholar ID | *required* | Google Scholar user ID |
-| `paper` | Paper ID | *required for paper endpoints* | Paper ID (from citation_for_view) |
+| `orcid` | ORCID iD | *required for profile endpoints* | e.g. `0000-0002-9322-3515` |
+| `paper` | Work ID or DOI | *required for paper endpoints* | e.g. `W2919115771` |
 | `theme` | `light`, `dark` | `light` | Card color theme |
 | `color` | Hex color (no #) | `4285f4` | Accent color |
 | `format` | `json` | `svg` | Response format |
 
 ## Examples
 
-### Profile card with link
+### Profile Card
+
+[![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515)](https://orcid.org/0000-0002-9322-3515)
+
 ```markdown
-[![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ)](https://scholar.google.com/citations?user=kukA0LcAAAAJ)
+[![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515)](https://orcid.org/0000-0002-9322-3515)
 ```
 
-### Dark theme
+### Dark Theme
+
+![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515&theme=dark)
+
 ```markdown
-![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ&theme=dark)
+![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515&theme=dark)
 ```
 
-### Custom accent color
+### Custom Accent Color
+
+![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515&color=e91e63)
+
 ```markdown
-![Scholar Stats](https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ&color=e91e63)
+![Scholar Stats](https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515&color=e91e63)
 ```
 
-### Paper card
+### Paper Card
+
+![Paper](https://scholar-badge.scholar-stats.workers.dev/card/paper?paper=W2919115771)
+
 ```markdown
-![Paper](https://scholar-badge.<your-domain>/card/paper?user=kukA0LcAAAAJ&paper=u5HHmVD_uO8C)
+![Paper](https://scholar-badge.scholar-stats.workers.dev/card/paper?paper=W2919115771)
 ```
 
-### Badges in a row
+### Badges in a Row
+
+![Citations](https://scholar-badge.scholar-stats.workers.dev/badge/profile/citations?orcid=0000-0002-9322-3515) ![h-index](https://scholar-badge.scholar-stats.workers.dev/badge/profile/h-index?orcid=0000-0002-9322-3515) ![i10-index](https://scholar-badge.scholar-stats.workers.dev/badge/profile/i10-index?orcid=0000-0002-9322-3515)
+
 ```markdown
-![Citations](https://scholar-badge.<your-domain>/badge/profile/citations?user=kukA0LcAAAAJ)
-![h-index](https://scholar-badge.<your-domain>/badge/profile/h-index?user=kukA0LcAAAAJ)
-![i10-index](https://scholar-badge.<your-domain>/badge/profile/i10-index?user=kukA0LcAAAAJ)
+![Citations](https://scholar-badge.scholar-stats.workers.dev/badge/profile/citations?orcid=0000-0002-9322-3515)
+![h-index](https://scholar-badge.scholar-stats.workers.dev/badge/profile/h-index?orcid=0000-0002-9322-3515)
+![i10-index](https://scholar-badge.scholar-stats.workers.dev/badge/profile/i10-index?orcid=0000-0002-9322-3515)
 ```
 
-### JSON response
+### JSON Response
+
 ```
-https://scholar-badge.<your-domain>/card/profile?user=kukA0LcAAAAJ&format=json
+https://scholar-badge.scholar-stats.workers.dev/card/profile?orcid=0000-0002-9322-3515&format=json
 ```
 
 Returns:
 ```json
 {
-  "name": "Yoshua Bengio",
-  "affiliation": "Professor of computer science, University of Montreal, Mila, IVADO, CIFAR",
-  "interests": ["Machine learning", "deep learning", "artificial intelligence"],
-  "citations": 1094450,
-  "hIndex": 255,
-  "i10Index": 1039,
-  "scrapedAt": 1778491696994
+  "name": "Geoffrey Hinton",
+  "affiliation": "University of Toronto",
+  "interests": ["Deep Learning", "Neural Networks", "Machine Learning"],
+  "citations": 894234,
+  "hIndex": 186,
+  "i10Index": 520,
+  "worksCount": 823,
+  "fetchedAt": 1778491696994
 }
 ```
 
@@ -115,12 +131,12 @@ Returns:
 
 | Endpoint | Description |
 |----------|-------------|
-| `/card/profile?user=ID` | Profile stats card (SVG) |
-| `/card/paper?user=ID&paper=PID` | Paper stats card (SVG) |
-| `/badge/profile/citations?user=ID` | Citations badge |
-| `/badge/profile/h-index?user=ID` | h-index badge |
-| `/badge/profile/i10-index?user=ID` | i10-index badge |
-| `/badge/paper/citations?user=ID&paper=PID` | Paper citations badge |
+| `/card/profile?orcid=ORCID` | Profile stats card (SVG) |
+| `/card/paper?paper=ID` | Paper stats card (SVG) |
+| `/badge/profile/citations?orcid=ORCID` | Citations badge |
+| `/badge/profile/h-index?orcid=ORCID` | h-index badge |
+| `/badge/profile/i10-index?orcid=ORCID` | i10-index badge |
+| `/badge/paper/citations?paper=ID` | Paper citations badge |
 
 ## Self-Hosting
 
@@ -149,25 +165,33 @@ npx wrangler deploy
 
 ### How It Works
 
-1. A request comes in (e.g. `/card/profile?user=kukA0LcAAAAJ`)
+1. A request comes in (e.g. `/card/profile?orcid=0000-0002-9322-3515`)
 2. Check Edge Cache (per-location, free, no limits)
 3. On miss, check Workers KV (persistent, global)
-4. On miss, scrape Google Scholar and cache in both layers
+4. On miss, fetch from OpenAlex API and cache in both layers
 5. If cached data is >24 hours old, serve stale and refresh in background
-6. SVG is rendered from the scraped data with the requested theme/color
+6. SVG is rendered from the fetched data with the requested theme/color
 
 ### Rate Limits
 
 - **Per-IP**: 30 requests/minute
-- **Cache TTL**: 24 hours (data is scraped at most once per user per day)
+- **Cache TTL**: 24 hours (data is fetched at most once per author per day)
 - **Browser cache**: 1 hour
 
 ## Tech Stack
 
 - **Runtime**: Cloudflare Workers (TypeScript)
+- **Data Source**: [OpenAlex API](https://docs.openalex.org/) (free, no key required)
+- **Author Lookup**: [ORCID](https://orcid.org/)
 - **Cache**: Edge Cache API + Workers KV (two-layer)
 - **Rendering**: SVG via string templates
 - **DDoS Protection**: Cloudflare (built-in)
+
+## Why not Google Scholar?
+
+Google Scholar does not provide a public API and actively blocks automated requests (returning 403/CAPTCHA responses from cloud server IPs). Scholar Badge uses [OpenAlex](https://openalex.org/) instead, which offers a free, open API with no authentication required.
+
+**Why do the numbers differ from Google Scholar?** Google Scholar counts citations more aggressively — it indexes books, theses, preprints, patents, and even some non-peer-reviewed sources. OpenAlex primarily covers peer-reviewed literature using data from Crossref, PubMed, DOAJ, and institutional repositories. As a result, Google Scholar typically reports higher citation counts and h-index values. Both are legitimate metrics; they just measure slightly different things.
 
 ## License
 

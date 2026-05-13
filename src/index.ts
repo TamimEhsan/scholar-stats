@@ -2,7 +2,7 @@ import { Env, CardOptions, ProfileData, PaperData } from "./types";
 
 type DataResult<T> = { data: T; error: null } | { data: null; error: string };
 import {
-  validateScholarId,
+  validateOrcid,
   validatePaperId,
   validateColor,
   parseTheme,
@@ -61,9 +61,8 @@ function handleScrapeError(err: unknown, url: URL): Response {
   const json = isJson(url);
 
   const errorMap: Record<string, { msg: string; status: number }> = {
-    RATE_LIMITED: { msg: "Scholar is temporarily unavailable — try again later", status: 503 },
-    CAPTCHA: { msg: "Scholar is temporarily unavailable — try again later", status: 503 },
-    USER_NOT_FOUND: { msg: "Scholar profile not found", status: 404 },
+    RATE_LIMITED: { msg: "OpenAlex is temporarily unavailable — try again later", status: 503 },
+    USER_NOT_FOUND: { msg: "Author not found for this ORCID", status: 404 },
     PAPER_NOT_FOUND: { msg: "Paper not found", status: 404 },
   };
 
@@ -118,16 +117,18 @@ export default {
       return jsonResponse({
         service: "Scholar Badge API",
         cards: {
-          profile: "/card/profile?user=SCHOLAR_ID",
-          paper: "/card/paper?user=USER_ID&paper=PAPER_ID",
+          profile: "/card/profile?orcid=ORCID",
+          paper: "/card/paper?paper=PAPER_ID",
         },
         badges: {
-          "profile/citations": "/badge/profile/citations?user=SCHOLAR_ID",
-          "profile/h-index": "/badge/profile/h-index?user=SCHOLAR_ID",
-          "profile/i10-index": "/badge/profile/i10-index?user=SCHOLAR_ID",
-          "paper/citations": "/badge/paper/citations?user=USER_ID&paper=PAPER_ID",
+          "profile/citations": "/badge/profile/citations?orcid=ORCID",
+          "profile/h-index": "/badge/profile/h-index?orcid=ORCID",
+          "profile/i10-index": "/badge/profile/i10-index?orcid=ORCID",
+          "paper/citations": "/badge/paper/citations?paper=PAPER_ID",
         },
         params: {
+          orcid: "ORCID iD (e.g. 0000-0002-9322-3515)",
+          paper: "OpenAlex work ID (e.g. W2919115771) or DOI (e.g. 10.1234/example)",
           theme: "light | dark (default: light)",
           color: "hex accent color (default: 4285f4)",
           format: "json (default: svg)",
@@ -142,45 +143,44 @@ export default {
 // --- Helpers to fetch profile/paper data with caching ---
 
 async function getProfileData(url: URL, env: Env, ctx: ExecutionContext): Promise<DataResult<ProfileData>> {
-  const userId = validateScholarId(url.searchParams.get("user"));
-  if (!userId) return { data: null, error: "Missing or invalid 'user' parameter" };
+  const orcid = validateOrcid(url.searchParams.get("orcid"));
+  if (!orcid) return { data: null, error: "Missing or invalid 'orcid' parameter (e.g. 0000-0002-9322-3515)" };
 
-  let data = await getCachedProfile(env, userId);
+  let data = await getCachedProfile(env, orcid);
 
-  if (data && isStale(data.scrapedAt)) {
+  if (data && isStale(data.fetchedAt)) {
     ctx.waitUntil(
-      scrapeProfile(userId)
-        .then((fresh) => cacheProfile(env, userId, fresh))
+      scrapeProfile(orcid)
+        .then((fresh) => cacheProfile(env, orcid, fresh))
         .catch((err) => console.error("Background refresh failed:", err))
     );
   }
 
   if (!data) {
-    data = await scrapeProfile(userId);
-    await cacheProfile(env, userId, data);
+    data = await scrapeProfile(orcid);
+    await cacheProfile(env, orcid, data);
   }
 
   return { data, error: null };
 }
 
 async function getPaperData(url: URL, env: Env, ctx: ExecutionContext): Promise<DataResult<PaperData>> {
-  const userId = validateScholarId(url.searchParams.get("user"));
   const paperId = validatePaperId(url.searchParams.get("paper"));
-  if (!userId || !paperId) return { data: null, error: "Missing or invalid 'user' and/or 'paper' parameter" };
+  if (!paperId) return { data: null, error: "Missing or invalid 'paper' parameter (e.g. W2919115771 or DOI)" };
 
-  let data = await getCachedPaper(env, userId, paperId);
+  let data = await getCachedPaper(env, paperId);
 
-  if (data && isStale(data.scrapedAt)) {
+  if (data && isStale(data.fetchedAt)) {
     ctx.waitUntil(
-      scrapePaper(userId, paperId)
-        .then((fresh) => cachePaper(env, userId, paperId, fresh))
+      scrapePaper(paperId)
+        .then((fresh) => cachePaper(env, paperId, fresh))
         .catch((err) => console.error("Background refresh failed:", err))
     );
   }
 
   if (!data) {
-    data = await scrapePaper(userId, paperId);
-    await cachePaper(env, userId, paperId, data);
+    data = await scrapePaper(paperId);
+    await cachePaper(env, paperId, data);
   }
 
   return { data, error: null };

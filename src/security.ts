@@ -1,9 +1,9 @@
-const SCHOLAR_ID_PATTERN = /^[a-zA-Z0-9_-]{1,30}$/;
-const PAPER_ID_PATTERN = /^[a-zA-Z0-9_-]{1,30}$/;
+const ORCID_PATTERN = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+const PAPER_ID_PATTERN = /^W\d{1,20}$|^10\.\d{4,9}\/[^\s]+$/;
 const HEX_COLOR_PATTERN = /^[0-9a-fA-F]{6}$/;
 
-export function validateScholarId(id: string | null): string | null {
-  if (!id || !SCHOLAR_ID_PATTERN.test(id)) return null;
+export function validateOrcid(id: string | null): string | null {
+  if (!id || !ORCID_PATTERN.test(id)) return null;
   return id;
 }
 
