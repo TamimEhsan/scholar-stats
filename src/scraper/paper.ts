@@ -54,15 +54,24 @@ export async function scrapePaper(
   const url = `${SCHOLAR_URL}?view_op=view_citation&hl=en&citation_for_view=${encodeURIComponent(userId)}:${encodeURIComponent(paperId)}`;
 
   const response = await fetch(url, {
-    headers: { "User-Agent": randomUA() },
+    headers: {
+      "User-Agent": randomUA(),
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Referer": "https://scholar.google.com/",
+      "Connection": "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+    },
   });
 
-  if (response.status === 429) {
+  if (response.status === 429 || response.status === 403) {
     throw new Error("RATE_LIMITED");
   }
 
   if (!response.ok) {
-    throw new Error(`Scholar returned ${response.status}`);
+    console.error(`Scholar HTTP ${response.status} for paper ${userId}:${paperId}`);
+    throw new Error("RATE_LIMITED");
   }
 
   const html = await response.text();
