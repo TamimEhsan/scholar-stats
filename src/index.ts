@@ -3,6 +3,7 @@ import { Env, CardOptions, ProfileData, PaperData } from "./types";
 type DataResult<T> = { data: T; error: null } | { data: null; error: string };
 import {
   validateOrcid,
+  validateOpenAlexAuthor,
   validatePaperId,
   validateColor,
   parseTheme,
@@ -128,6 +129,7 @@ export default {
         },
         params: {
           orcid: "ORCID iD (e.g. 0000-0002-9322-3515)",
+          id: "OpenAlex author ID (e.g. A5023888391) — alternative to orcid",
           paper: "OpenAlex work ID (e.g. W2919115771) or DOI (e.g. 10.1234/example)",
           theme: "light | dark (default: light)",
           color: "hex accent color (default: 4285f4)",
@@ -144,21 +146,29 @@ export default {
 
 async function getProfileData(url: URL, env: Env, ctx: ExecutionContext): Promise<DataResult<ProfileData>> {
   const orcid = validateOrcid(url.searchParams.get("orcid"));
-  if (!orcid) return { data: null, error: "Missing or invalid 'orcid' parameter (e.g. 0000-0002-9322-3515)" };
+  const openalexId = validateOpenAlexAuthor(url.searchParams.get("id"));
 
-  let data = await getCachedProfile(env, orcid);
+  if (!orcid && !openalexId) {
+    return { data: null, error: "Missing or invalid 'orcid' or 'id' parameter (e.g. orcid=0000-0002-9322-3515 or id=A5023888391)" };
+  }
+
+  const authorId = (orcid ?? openalexId)!;
+  const type = orcid ? "orcid" : "openalex";
+  const cacheKey = type === "orcid" ? authorId : `openalex:${authorId}`;
+
+  let data = await getCachedProfile(env, cacheKey);
 
   if (data && isStale(data.fetchedAt)) {
     ctx.waitUntil(
-      scrapeProfile(orcid)
-        .then((fresh) => cacheProfile(env, orcid, fresh))
+      scrapeProfile(authorId, type)
+        .then((fresh) => cacheProfile(env, cacheKey, fresh))
         .catch((err) => console.error("Background refresh failed:", err))
     );
   }
 
   if (!data) {
-    data = await scrapeProfile(orcid);
-    await cacheProfile(env, orcid, data);
+    data = await scrapeProfile(authorId, type);
+    await cacheProfile(env, cacheKey, data);
   }
 
   return { data, error: null };

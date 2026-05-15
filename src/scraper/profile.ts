@@ -19,8 +19,11 @@ interface OpenAlexAuthor {
   }>;
 }
 
-export async function scrapeProfile(orcid: string): Promise<ProfileData> {
-  const url = `${OPENALEX_API}/authors/https://orcid.org/${encodeURIComponent(orcid)}?select=id,display_name,cited_by_count,works_count,summary_stats,last_known_institutions,topics&mailto=scholar-badge@example.com`;
+export async function scrapeProfile(authorId: string, type: "orcid" | "openalex"): Promise<ProfileData> {
+  const authorPath = type === "orcid"
+    ? `https://orcid.org/${encodeURIComponent(authorId)}`
+    : encodeURIComponent(authorId);
+  const url = `${OPENALEX_API}/authors/${authorPath}?select=id,display_name,cited_by_count,works_count,summary_stats,last_known_institutions,topics&mailto=scholar-badge@example.com`;
 
   const response = await fetch(url);
 
@@ -33,7 +36,7 @@ export async function scrapeProfile(orcid: string): Promise<ProfileData> {
   }
 
   if (!response.ok) {
-    console.error(`OpenAlex HTTP ${response.status} for ORCID ${orcid}`);
+    console.error(`OpenAlex HTTP ${response.status} for ${type} ${authorId}`);
     throw new Error(`OpenAlex returned ${response.status}`);
   }
 

@@ -47,6 +47,11 @@ https://orcid.org/0000-0002-9322-3515
                   This is your ORCID
 ```
 
+**OpenAlex Author ID** — If you don't have an ORCID, you can use your OpenAlex author ID instead (starts with `A`). Search for your name at [OpenAlex](https://openalex.org/):
+```
+A5023888391    ← OpenAlex author ID
+```
+
 **Paper ID** — Use an OpenAlex work ID (starts with `W`) or a DOI. You can search for papers at [OpenAlex](https://openalex.org/):
 ```
 W2919115771                    ← OpenAlex work ID
@@ -57,7 +62,8 @@ W2919115771                    ← OpenAlex work ID
 
 | Parameter | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `orcid` | ORCID iD | *required for profile endpoints* | e.g. `0000-0002-9322-3515` |
+| `orcid` | ORCID iD | *required (or use `id`)* | e.g. `0000-0002-9322-3515` |
+| `id` | OpenAlex author ID | *required (or use `orcid`)* | e.g. `A5023888391` |
 | `paper` | Work ID or DOI | *required for paper endpoints* | e.g. `W2919115771` |
 | `theme` | `light`, `dark` | `light` | Card color theme |
 | `color` | Hex color (no #) | `4285f4` | Accent color |

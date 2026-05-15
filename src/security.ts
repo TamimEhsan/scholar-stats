@@ -1,9 +1,15 @@
 const ORCID_PATTERN = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+const OPENALEX_AUTHOR_PATTERN = /^A\d{1,20}$/;
 const PAPER_ID_PATTERN = /^W\d{1,20}$|^10\.\d{4,9}\/[^\s]+$/;
 const HEX_COLOR_PATTERN = /^[0-9a-fA-F]{6}$/;
 
 export function validateOrcid(id: string | null): string | null {
   if (!id || !ORCID_PATTERN.test(id)) return null;
+  return id;
+}
+
+export function validateOpenAlexAuthor(id: string | null): string | null {
+  if (!id || !OPENALEX_AUTHOR_PATTERN.test(id)) return null;
   return id;
 }
 
