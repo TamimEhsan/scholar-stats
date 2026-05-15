@@ -193,6 +193,25 @@ Google Scholar does not provide a public API and actively blocks automated reque
 
 **Why do the numbers differ from Google Scholar?** Google Scholar counts citations more aggressively — it indexes books, theses, preprints, patents, and even some non-peer-reviewed sources. OpenAlex primarily covers peer-reviewed literature using data from Crossref, PubMed, DOAJ, and institutional repositories. As a result, Google Scholar typically reports higher citation counts and h-index values. Both are legitimate metrics; they just measure slightly different things.
 
+## Contributing
+
+Contributions are welcome! Here's how to get started:
+
+1. Fork the repo and clone it
+2. Install dependencies: `npm install`
+3. Create a KV namespace: `npx wrangler kv namespace create CACHE`
+4. Update `wrangler.toml` with your KV namespace ID
+5. Start the dev server: `npx wrangler dev`
+6. Make your changes and test locally
+7. Open a pull request
+
+### Ideas for Contributions
+
+- New card layouts or badge types
+- Support for additional data sources
+- Themes and customization options
+- Documentation improvements
+
 ## License
 
 MIT
