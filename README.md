@@ -1,4 +1,4 @@
-# Scholar Badge
+# Scholar Stats
 
 Generate dynamic SVG cards and badges showing academic statistics — embeddable in GitHub READMEs, websites, and anywhere that renders images. Powered by [OpenAlex](https://openalex.org/).
 
@@ -189,7 +189,7 @@ npx wrangler deploy
 
 ## Why not Google Scholar?
 
-Google Scholar does not provide a public API and actively blocks automated requests (returning 403/CAPTCHA responses from cloud server IPs). Scholar Badge uses [OpenAlex](https://openalex.org/) instead, which offers a free, open API with no authentication required.
+Google Scholar does not provide a public API and actively blocks automated requests (returning 403/CAPTCHA responses from cloud server IPs). Scholar Stats uses [OpenAlex](https://openalex.org/) instead, which offers a free, open API with no authentication required.
 
 **Why do the numbers differ from Google Scholar?** Google Scholar counts citations more aggressively — it indexes books, theses, preprints, patents, and even some non-peer-reviewed sources. OpenAlex primarily covers peer-reviewed literature using data from Crossref, PubMed, DOAJ, and institutional repositories. As a result, Google Scholar typically reports higher citation counts and h-index values. Both are legitimate metrics; they just measure slightly different things.
 
