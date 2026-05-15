@@ -7,5 +7,4 @@ enabled = true
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "PLACEHOLDER_PRODUCTION_KV_ID"
-preview_id = "PLACEHOLDER_PREVIEW_KV_ID"
+id = "5a4069234b4843bc837ee3f62a989620"
