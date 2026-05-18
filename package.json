@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev:cf": "wrangler dev",
+    "dev:vercel": "vercel dev",
+    "deploy:cf": "wrangler deploy",
+    "deploy:vercel": "vercel --prod",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "description": "Google Scholar stats cards for your GitHub README",
+  "description": "Academic stats cards and badges for your GitHub README",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260511.1",
     "typescript": "^6.0.3",

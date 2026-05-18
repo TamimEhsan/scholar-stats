@@ -146,37 +146,42 @@ Returns:
 
 ## Self-Hosting
 
-### Prerequisites
+Scholar Stats supports two deployment platforms: **Cloudflare Workers** and **Vercel**.
 
-- Node.js 18+
-- A [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier works)
-
-### Setup
+### Option 1: Cloudflare Workers
 
 ```bash
-# Install dependencies
 npm install
 
 # Create KV namespace
 npx wrangler kv namespace create CACHE
-
-# Update wrangler.toml with the KV namespace ID from the output above
+# Update wrangler.toml with the KV namespace ID from the output
 
 # Run locally
-npx wrangler dev
+npm run dev:cf
 
 # Deploy
-npx wrangler deploy
+npm run deploy:cf
 ```
 
-### How It Works
+**Caching**: Two-layer — Edge Cache API (per-location, fast) + Workers KV (global, persistent). Data is cached for 24 hours with stale-while-revalidate.
 
-1. A request comes in (e.g. `/card/profile?orcid=0000-0002-9322-3515`)
-2. Check Edge Cache (per-location, free, no limits)
-3. On miss, check Workers KV (persistent, global)
-4. On miss, fetch from OpenAlex API and cache in both layers
-5. If cached data is >24 hours old, serve stale and refresh in background
-6. SVG is rendered from the fetched data with the requested theme/color
+### Option 2: Vercel
+
+```bash
+npm install
+
+# Link to your Vercel project
+npx vercel link
+
+# Run locally
+npm run dev:vercel
+
+# Deploy
+npm run deploy:vercel
+```
+
+**Caching**: In-memory Map (persists across requests in warm serverless instances) + CDN edge caching via `Cache-Control` headers. No external storage needed.
 
 ### Rate Limits
 
@@ -186,12 +191,11 @@ npx wrangler deploy
 
 ## Tech Stack
 
-- **Runtime**: Cloudflare Workers (TypeScript)
+- **Runtime**: Cloudflare Workers or Vercel (TypeScript)
 - **Data Source**: [OpenAlex API](https://docs.openalex.org/) (free, no key required)
 - **Author Lookup**: [ORCID](https://orcid.org/)
-- **Cache**: Edge Cache API + Workers KV (two-layer)
+- **Cache**: Platform-abstracted (CF: Edge Cache + KV, Vercel: in-memory + CDN)
 - **Rendering**: SVG via string templates
-- **DDoS Protection**: Cloudflare (built-in)
 
 ## Why not Google Scholar?
 
@@ -205,11 +209,9 @@ Contributions are welcome! Here's how to get started:
 
 1. Fork the repo and clone it
 2. Install dependencies: `npm install`
-3. Create a KV namespace: `npx wrangler kv namespace create CACHE`
-4. Update `wrangler.toml` with your KV namespace ID
-5. Start the dev server: `npx wrangler dev`
-6. Make your changes and test locally
-7. Open a pull request
+3. Start the dev server: `npm run dev:cf` (Cloudflare) or `npm run dev:vercel` (Vercel)
+4. Make your changes and test locally
+5. Open a pull request
 
 ### Ideas for Contributions
 
