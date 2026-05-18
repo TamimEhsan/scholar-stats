@@ -1,7 +1,3 @@
-export interface Env {
-  CACHE: KVNamespace;
-}
-
 export interface ProfileData {
   name: string;
   affiliation: string;
